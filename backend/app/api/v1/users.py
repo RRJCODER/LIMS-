@@ -1,6 +1,6 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     full_name: str
     role: Role = Role.analyst

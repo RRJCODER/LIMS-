@@ -1,9 +1,22 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
+from pydantic import field_validator
+import re
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", v):
+            raise ValueError("Invalid email address")
+        return v
+    password: str
+
+
 
 
 class TokenResponse(BaseModel):

@@ -2,10 +2,9 @@ import uuid
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
-from jose import JWTError
 
 from app.database import get_db
-from app.config import settings
+from app.auth.jwt_utils import JWTDecodeError
 
 bearer_scheme = HTTPBearer()
 
@@ -22,7 +21,7 @@ async def get_current_user(
         if payload.get("type") != "access":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
         user_id = uuid.UUID(payload["sub"])
-    except (JWTError, ValueError, KeyError):
+    except (JWTDecodeError, ValueError, KeyError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user = await get_user_by_id(db, user_id)
