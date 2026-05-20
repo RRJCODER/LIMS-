@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Certificado de Análisis — {{ coa.coa_number }}</title>
+  <link rel="stylesheet" href="styles/coa.css">
+</head>
+<body>
+  <div class="page">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-block">
+        {% if logo_b64 %}
+          <img src="data:image/png;base64,{{ logo_b64 }}" alt="Logo" class="logo">
+        {% else %}
+          <div class="logo-placeholder">🫒</div>
+        {% endif %}
+      </div>
+      <div class="lab-info">
+        <h1 class="lab-name">{{ lab_name }}</h1>
+        {% if accreditation %}
+          <p class="accreditation">Acreditación / Accreditation: {{ accreditation }}</p>
+        {% endif %}
+      </div>
+      <div class="doc-info">
+        <table class="meta-table">
+          <tr><td>Nº Certificado</td><td><strong>{{ coa.coa_number }}</strong></td></tr>
+          <tr><td>Certificate No.</td><td></td></tr>
+          <tr><td>Fecha de emisión</td><td>{{ issue_date.strftime('%d/%m/%Y') }}</td></tr>
+          <tr><td>Issue Date</td><td></td></tr>
+          <tr><td>Revisión / Revision</td><td>{{ coa.revision }}</td></tr>
+        </table>
+      </div>
+    </header>
+
+    <div class="title-bar">
+      <h2>CERTIFICADO DE ANÁLISIS / CERTIFICATE OF ANALYSIS</h2>
+      {% if coa.overall_compliance %}
+        <span class="compliance-badge compliance-{{ coa.overall_compliance | lower | replace(' ', '-') }}">
+          {{ coa.overall_compliance }}
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Sample Information -->
+    <section class="section">
+      <h3>Datos de la Muestra / Sample Information</h3>
+      <table class="info-table">
+        <tr>
+          <td class="label">Código de laboratorio / Lab Code</td>
+          <td>{{ sample.lab_code }}</td>
+          <td class="label">Cliente / Client</td>
+          <td>{{ sample.client_name }}</td>
+        </tr>
+        <tr>
+          <td class="label">Referencia cliente / Client Ref.</td>
+          <td>{{ sample.client_reference or '—' }}</td>
+          <td class="label">Tipo de matriz / Matrix</td>
+          <td>{{ sample.matrix.value | replace('_', ' ') | title }}</td>
+        </tr>
+        <tr>
+          <td class="label">País de origen / Origin</td>
+          <td>{{ sample.origin_country or '—' }}</td>
+          <td class="label">Cosecha / Harvest Year</td>
+          <td>{{ sample.harvest_year or '—' }}</td>
+        </tr>
+        <tr>
+          <td class="label">Fecha de recepción / Receipt Date</td>
+          <td>{{ sample.receipt_date.strftime('%d/%m/%Y') }}</td>
+          <td class="label">Productor / Producer</td>
+          <td>{{ sample.producer or '—' }}</td>
+        </tr>
+        {% if sample.declared_grade %}
+        <tr>
+          <td class="label">Grado declarado / Declared Grade</td>
+          <td colspan="3"><strong>{{ sample.declared_grade.name_es }} / {{ sample.declared_grade.name_en }}</strong></td>
+        </tr>
+        {% endif %}
+      </table>
+    </section>
+
+    <!-- Results Table -->
+    <section class="section">
+      <h3>Resultados Analíticos / Analytical Results</h3>
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Parámetro / Parameter</th>
+            <th>Símbolo</th>
+            <th>Resultado / Result</th>
+            <th>Unidad / Unit</th>
+            <th>Incertidumbre U (k=2)</th>
+            <th>Conformidad / Compliance</th>
+            <th>Referencia normativa</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          <tr class="{{ 'fail' if r.in_spec == false else ('pass' if r.in_spec == true else '') }}">
+            <td>{{ r.analyte_name_es }}<br><small>{{ r.analyte_name }}</small></td>
+            <td class="center">{{ r.symbol }}</td>
+            <td class="center">
+              {% if r.value is not none %}{{ "%.{}f".format(2) % r.value }}{% else %}—{% endif %}
+            </td>
+            <td class="center">{{ r.unit }}</td>
+            <td class="center">
+              {% if r.uncertainty is not none %}± {{ "%.{}f".format(2) % r.uncertainty }}{% else %}—{% endif %}
+            </td>
+            <td class="center">
+              {% if r.in_spec == true %}<span class="badge pass">✓ Conforme</span>
+              {% elif r.in_spec == false %}<span class="badge fail">✗ No Conforme</span>
+              {% else %}<span class="badge na">N/D</span>{% endif %}
+            </td>
+            <td class="small">{{ r.compliance_note or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Classification -->
+    {% if coa.overall_compliance %}
+    <section class="section classification">
+      <h3>Clasificación / Classification</h3>
+      <p>
+        Según los resultados obtenidos, la muestra se clasifica como:<br>
+        <em>Based on the obtained results, the sample is classified as:</em>
+      </p>
+      <p class="classification-result">{{ coa.overall_compliance }}</p>
+    </section>
+    {% endif %}
+
+    <!-- Notes -->
+    {% if coa.notes %}
+    <section class="section">
+      <h3>Observaciones / Notes</h3>
+      <p>{{ coa.notes }}</p>
+    </section>
+    {% endif %}
+
+    <!-- ISO 17025 Statement -->
+    <section class="section disclaimer">
+      <p>Este certificado ha sido emitido de acuerdo con los requisitos de la norma ISO/IEC 17025.
+         Los resultados son únicamente válidos para la muestra ensayada.
+         La reproducción parcial de este documento requiere autorización escrita del laboratorio.</p>
+      <p><em>This certificate has been issued in accordance with ISO/IEC 17025 requirements.
+         Results apply only to the sample tested. Partial reproduction requires written authorization.</em></p>
+    </section>
+
+    <!-- Signatures -->
+    <section class="signatures">
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <p>Analista responsable / Responsible Analyst</p>
+        <p>{{ coa.issued_by.full_name if coa.issued_by else '________________' }}</p>
+      </div>
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <p>Aprobado por / Approved by</p>
+        <p>{{ coa.approved_by.full_name if coa.approved_by else '________________' }}</p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>{{ lab_name }} | {{ coa.coa_number }} Rev.{{ coa.revision }} | {{ issue_date.strftime('%d/%m/%Y') }}
+         | SHA-256: {{ coa.pdf_hash[:16] if coa.pdf_hash else 'pending' }}...</p>
+    </footer>
+  </div>
+</body>
+</html>
