@@ -11,9 +11,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': { target: 'http://backend:8000', changeOrigin: true },
-      '/media': { target: 'http://backend:8000', changeOrigin: true },
-      '/ws': { target: 'ws://backend:8000', ws: true, changeOrigin: true },
+      '/api': { target: process.env.VITE_BACKEND_URL || 'http://localhost:8000', changeOrigin: true },
+      '/media': { target: process.env.VITE_BACKEND_URL || 'http://localhost:8000', changeOrigin: true },
+      '/ws': { target: (process.env.VITE_BACKEND_URL || 'http://localhost:8000').replace('http', 'ws'), ws: true, changeOrigin: true },
     },
   },
 })
