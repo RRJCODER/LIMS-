@@ -19,7 +19,8 @@ export default function LoginPage() {
     setError('')
     try {
       const data = await authApi.login(email, password)
-      const me = await import('@/api/auth').then((m) => m.authApi.me())
+      useAuthStore.getState().setAccessToken(data.access_token)
+      const me = await authApi.me()
       setAuth(me, data.access_token, data.refresh_token)
       navigate('/dashboard')
     } catch (err: any) {
